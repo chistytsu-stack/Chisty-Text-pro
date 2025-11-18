@@ -1,0 +1,19 @@
+{
+  "name": "muzan-text-pro",
+  "version": "1.0.0",
+  "description": "A temporary text storage website with MongoDB and Render",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "body-parser": "^1.20.2",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "mongodb": "^6.8.0",
+    "mongoose": "^8.4.4",
+    "archiver": "^7.0.1",
+    "axios": "^1.6.0"
+  }
+}
