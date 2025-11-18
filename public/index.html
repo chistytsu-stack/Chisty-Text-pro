@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Muzan Text Pro</title>
+    <link rel="stylesheet" href="/style.css">
+    <link rel="icon" type="image/x-icon" href="https://i.imgur.com/xT55jDk.png">
+    <style>
+        .profile-pic {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            object-fit: cover;
+            display: block;
+            margin: 20px auto;
+            border: 3px solid #00ffc8;
+            box-shadow: 0 0 60px rgba(0, 255, 200, 0.7);
+        }
+
+        /* Loading bar */
+        .loading-container {
+            width: 100%;
+            height: 10px;
+            background-color: #222;
+            border-radius: 5px;
+            overflow: hidden;
+            margin: 15px 0;
+            display: none; /* Hidden by default */
+        }
+
+        .loading-bar {
+            width: 0%;
+            height: 100%;
+            background-color: #00ffc8;
+            transition: width 3s linear;
+        }
+    </style>
+</head>
+<body>
+    <button id="lockBtn" class="lock-btn"> Lock</button>
+
+    <div class="container">
+        <!-- profile picture -->
+        <img src="https://i.ibb.co/xKfVpTG9/516082682-2591558197862383-3968626135246148825-n-jpg-stp-dst-jpg-p480x480-tt6-nc-cat-101-ccb-1-7-nc.jpg" alt="Profile" class="profile-pic">
+
+        <h1 class="title">Muzan Text Pro</h1>
+
+        <div class="button-container">
+            <button class="action-btn" id="rawBtn">Raw</button>
+            <button class="action-btn" id="copyBtn">Copy</button>
+            <button class="action-btn" id="downloadBtn">Download</button>
+            <button class="action-btn" id="linkBtn">Link</button>
+        </div>
+
+        <div class="textarea-container">
+            <textarea id="pastebox" class="textbox" placeholder="Start writing..."></textarea>
+        </div>
+
+        <!-- Loading bar -->
+        <div class="loading-container">
+            <div class="loading-bar"></div>
+        </div>
+
+        <p id="message" class="message"></p>
+    </div>
+
+<!-- TOP BUTTONS -->
+<button id="usageBtn">Usage</button>
+<button id="lockBtn">Lock</button>
+
+<script src="script.js"></script>
+</body>
+</html>
+    
+    <script src="/script.js"></script>
+</body>
+</html>
