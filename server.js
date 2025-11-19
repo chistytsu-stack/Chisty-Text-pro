@@ -13,8 +13,8 @@ const PORT = process.env.PORT || 3000;
 // ===== MIDDLEWARE =====
 app.use(cors());
 app.use(express.json());
-app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.urlencoded({ extended: true }));
+app.use(express.static(path.join(__dirname, 'public')));
 
 // ===== MONGODB CONNECT =====
 mongoose.connect(process.env.MONGODB_URI)
@@ -25,12 +25,12 @@ mongoose.connect(process.env.MONGODB_URI)
 const TextSchema = new mongoose.Schema({
   text: { type: String, required: true },
   rawId: { type: String, required: true, index: true, unique: true },
-  createdAt: { type: Date, default: Date.now, expires: 1200 }
+  createdAt: { type: Date, default: Date.now, expires: 1200 } // auto delete 20 min
 });
 
 const TextData = mongoose.model("TextData", TextSchema);
 
-// ===== RAW ID GENERATOR (Duplicate free) =====
+// ===== UNIQUE RAW-ID CREATOR =====
 async function generateUniqueRawId() {
   let id, exists;
   do {
@@ -40,7 +40,7 @@ async function generateUniqueRawId() {
   return id;
 }
 
-// ===== GitHub RAW =====
+// ===== GITHUB RAW GETTER =====
 async function getRawFromGitHub(filePath) {
   const token = process.env.GITHUB_TOKEN;
   const username = "Jinpachi76";
@@ -54,47 +54,46 @@ async function getRawFromGitHub(filePath) {
         Accept: "application/vnd.github.v3.raw"
       }
     });
-    return res.data;  
-  } catch (e) {
-    console.error("GitHub Fetch Error:", e.message);
+    return res.data;
+  } catch {
     return null;
   }
 }
 
-// =================== API ===================
+// ====================== API ======================
 
-// CREATE text
+// 🔥 CREATE TEXT — BOT COMPATIBLE
 app.post("/api/text", async (req, res) => {
   try {
     const { text } = req.body;
-    if (!text) return res.status(400).json({ message: "টেক্সট লেখা আবশ্যক" });
+    if (!text) return res.status(400).json({ message: "Text is required" });
 
     const rawId = await generateUniqueRawId();
-    const newText = await TextData.create({ text, rawId });
+    await TextData.create({ text, rawId });
 
-    res.status(201).json({
-      rawId,
-      link: `${req.protocol}://${req.get("host")}/link/${rawId}`
-    });
+    // BOT ONLY NEEDS rawId
+    res.json({ rawId });
 
   } catch (e) {
     res.status(500).json({ message: "Server Error", error: e.message });
   }
 });
 
-// GET text
+// 🔥 GET TEXT (BOT NEEDS PURE TEXT ONLY)
 app.get("/api/text/:id", async (req, res) => {
   try {
     const txt = await TextData.findOne({ rawId: req.params.id });
-    if (!txt) return res.status(404).json({ message: "Text পাওয়া যায়নি" });
 
-    res.json(txt);
-  } catch (e) {
-    res.status(500).json({ message: "Server Error", error: e.message });
+    if (!txt) return res.status(404).send("Text not found");
+
+    res.type("text/plain").send(txt.text);
+
+  } catch {
+    res.status(500).send("Server Error");
   }
 });
 
-// UPDATE text
+// 🔥 UPDATE TEXT
 app.put("/api/text/:id", async (req, res) => {
   try {
     const updated = await TextData.findOneAndUpdate(
@@ -103,31 +102,31 @@ app.put("/api/text/:id", async (req, res) => {
       { new: true }
     );
 
-    if (!updated) return res.status(404).json({ message: "Text পাওয়া যায়নি" });
+    if (!updated) return res.status(404).json({ message: "Text not found" });
 
     res.json({ message: "Updated", updated });
-  } catch (e) {
-    res.status(500).json({ message: "Server Error", error: e.message });
+  } catch {
+    res.status(500).json({ message: "Server Error" });
   }
 });
 
-// DELETE text
+// 🔥 DELETE TEXT
 app.delete("/api/text/:id", async (req, res) => {
   try {
     const deleted = await TextData.findOneAndDelete({ rawId: req.params.id });
-    if (!deleted) return res.status(404).json({ message: "Text পাওয়া যায়নি" });
+    if (!deleted) return res.status(404).json({ message: "Text not found" });
 
     res.json({ message: "Deleted" });
-  } catch (e) {
-    res.status(500).json({ message: "Server Error", error: e.message });
+  } catch {
+    res.status(500).json({ message: "Server Error" });
   }
 });
 
-// DOWNLOAD ZIP
+// 🔥 DOWNLOAD ZIP (optional)
 app.get("/api/download/:id", async (req, res) => {
   try {
     const txt = await TextData.findOne({ rawId: req.params.id });
-    if (!txt) return res.status(404).json({ message: "Text পাওয়া যায়নি" });
+    if (!txt) return res.status(404).send("Text not found");
 
     const fileName = `text-${req.params.id}.txt`;
     const tempDir = path.join(__dirname, "temp");
@@ -141,7 +140,7 @@ app.get("/api/download/:id", async (req, res) => {
     const zipPath = path.join(tempDir, zipName);
 
     const output = fs.createWriteStream(zipPath);
-    const archive = archiver("zip", { zlib: { level: 9 } });
+    const archive = archiver("zip");
 
     output.on("close", () => {
       res.download(zipPath, zipName, () => {
@@ -154,21 +153,34 @@ app.get("/api/download/:id", async (req, res) => {
     archive.file(txtPath, { name: fileName });
     archive.finalize();
 
-  } catch (e) {
-    res.status(500).json({ message: "Zip Error", error: e.message });
+  } catch {
+    res.status(500).send("Zip Error");
   }
 });
 
-// RAW from GitHub
+// 🔥 GITHUB RAW
 app.get("/api/raw/:filePath", async (req, res) => {
   const content = await getRawFromGitHub(req.params.filePath);
-  if (!content) return res.status(404).json({ message: "GitHub file পাওয়া যায়নি" });
+  if (!content) return res.status(404).send("GitHub file not found");
 
   res.type("text/plain").send(content);
 });
 
-// FRONTEND
-app.get(["/", "/link/:id"], (req, res) => {
+// 🔥 FRONTEND TEXT PAGE — NO HTML, PURE TEXT OUTPUT
+app.get("/link/:id", async (req, res) => {
+  try {
+    const txt = await TextData.findOne({ rawId: req.params.id });
+    if (!txt) return res.status(404).send("Text not found");
+
+    res.type("text/plain").send(txt.text);
+
+  } catch {
+    res.status(500).send("Server Error");
+  }
+});
+
+// DEFAULT FRONTEND
+app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "index.html"));
 });
 
